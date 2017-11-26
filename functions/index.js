@@ -26,10 +26,14 @@ exports.processHandler = functions.https.onRequest((request, response) => {
   // let ctx = request.body.result.contexts;
   // let source = (request.body.originalDetectIntentRequest) ? request.body.originalDetectIntentRequest.source : undefined;
   // let session = (request.body.session) ? request.body.session : undefined;
-  let responseText = request.body.queryResult.fulfillmentText;
   
-  const status = params.status || 'OFF';
-  const message = messagesJson['input.aircon.switch'][status];
+  const status = params.status;
+  const messages = messagesJson[action] || {};
+  const message = messages[status];
+ 
+  if (!status || status.length === 0 || !message) {
+    return sendResponse("認識できませんでした。");
+  }
   
   console.log('IRKIT Message: ' + JSON.stringify(message));
   
@@ -43,7 +47,7 @@ exports.processHandler = functions.https.onRequest((request, response) => {
   }
   
   postToIRKit(message).then(() => {
-    sendResponse(responseText);
+    sendResponse("了解しました。");
   }).catch((err) => {
     console.error(err);
     sendResponse(err.message);

@@ -8,11 +8,18 @@ const messagesJson = require('./messages.json');
 const postToIRKit = (message) => {
   const clinetKey = process.env.IRKIT_CLIENTKEY || functions.config().irkit.clientkey || '';
   const deviceid  = process.env.IRKIT_DEVICEID || functions.config().irkit.deviceid || '';
-  return axios.post('https://api.getirkit.com/1/messages', {
-    clientkey: clinetKey,
-    deviceid: deviceid,
-    message: JSON.stringify(message)
-  });
+  const messages = Array.isArray(message) ? message : [message];
+  const promise = Promise.resolve();
+  for (const m of messages) {
+    promise.then(() => {
+      return axios.post('https://api.getirkit.com/1/messages', {
+        clientkey: clinetKey,
+        deviceid: deviceid,
+        message: JSON.stringify(m)
+      });
+    });
+  }
+  return promise;
 };
 
 exports.processHandler = functions.https.onRequest((request, response) => {

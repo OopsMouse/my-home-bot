@@ -27,29 +27,60 @@ exports.processHandler = functions.https.onRequest((request, response) => {
   // let source = (request.body.originalDetectIntentRequest) ? request.body.originalDetectIntentRequest.source : undefined;
   // let session = (request.body.session) ? request.body.session : undefined;
   
-  const status = params.status || '';
-  const messages = messagesJson[action] || {};
-  const message = messages[status.toLowerCase()];
- 
-  if (!status || status.length === 0 || !message) {
-    return sendResponse("認識できませんでした。");
-  }
-  
-  console.log('IRKIT Message: ' + JSON.stringify(message));
-  
   function sendResponse(message) {
     let responseJson = {};
     responseJson.speech = message;
     responseJson.displayText = message;
-  
+    
     console.log('Response to Dialogflow: ' + JSON.stringify(responseJson));
     response.json(responseJson);
   }
   
-  postToIRKit(message).then(() => {
-    sendResponse("了解しました。");
-  }).catch((err) => {
-    console.error(err);
-    sendResponse(err.message);
-  });
+  function switchStatus(action, status) {
+    const messages = messagesJson[action] || {};
+    const message = messages[status.toLowerCase()];
+  
+    console.log('IRKIT Message: ' + JSON.stringify(message));
+  
+    postToIRKit(message).then(() => {
+      sendResponse("了解しました。");
+    }).catch((err) => {
+      console.error(err);
+      sendResponse(err.message);
+    });
+  }
+  
+  function switchChannel(action, channel) {
+    const messages = messagesJson[action] || {};
+    let message;
+    if (!!channel) {
+      message = messages[channel.toLowerCase()];
+    } else {
+      const channelMessages = Object.values(messages);
+      message = channelMessages[Math.floor(Math.random() * channelMessages.length)];
+    }
+  
+    console.log('IRKIT Message: ' + JSON.stringify(message));
+  
+    postToIRKit(message).then(() => {
+      sendResponse("了解しました。");
+    }).catch((err) => {
+      console.error(err);
+      sendResponse(err.message);
+    });
+  }
+  
+  switch (action) {
+    case 'input.aircon.switch':
+    case 'input.light.switch':
+    case 'input.tv.switch':
+      const status = params.status || '';
+      switchStatus(action, status);
+      break;
+    case 'input.tv.channel.switch':
+      const channel = params.channel || null;
+      break;
+    default:
+      sendResponse("認識できませんでした。");
+  }
 });

@@ -63,7 +63,9 @@ exports.processHandler = functions.https.onRequest((request, response) => {
     if (!!channel) {
       message = messages[channel.toLowerCase()];
     } else {
-      const channelMessages = Object.values(messages);
+      const channelMessages = Object.keys(messages).map(function(key) {
+        return messages[key];
+      });
       message = channelMessages[Math.floor(Math.random() * channelMessages.length)];
     }
   
@@ -86,6 +88,7 @@ exports.processHandler = functions.https.onRequest((request, response) => {
       break;
     case 'input.tv.channel.switch':
       const channel = params.channel || null;
+      switchChannel(action, channel);
       break;
     default:
       sendResponse("認識できませんでした。");

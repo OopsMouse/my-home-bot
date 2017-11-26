@@ -27,9 +27,9 @@ exports.processHandler = functions.https.onRequest((request, response) => {
   // let source = (request.body.originalDetectIntentRequest) ? request.body.originalDetectIntentRequest.source : undefined;
   // let session = (request.body.session) ? request.body.session : undefined;
   
-  const status = params.status;
+  const status = params.status || '';
   const messages = messagesJson[action] || {};
-  const message = messages[status];
+  const message = messages[status.toLowerCase()];
  
   if (!status || status.length === 0 || !message) {
     return sendResponse("認識できませんでした。");

@@ -35,6 +35,11 @@ exports.processHandler = functions.https.onRequest((request, response) => {
   // let session = (request.body.session) ? request.body.session : undefined;
   
   function sendResponse(message) {
+    if (!message) {
+      response.send();
+      return;
+    }
+
     let responseJson = {};
     responseJson.speech = message;
     responseJson.displayText = message;
@@ -50,7 +55,7 @@ exports.processHandler = functions.https.onRequest((request, response) => {
     console.log('IRKIT Message: ' + JSON.stringify(message));
   
     postToIRKit(message).then(() => {
-      sendResponse("了解しました。");
+      sendResponse();
     }).catch((err) => {
       console.error(err);
       sendResponse(err.message);
@@ -62,21 +67,36 @@ exports.processHandler = functions.https.onRequest((request, response) => {
     let message;
     if (!!channel) {
       message = messages[channel.toLowerCase()];
+      console.log('IRKIT Message: ' + JSON.stringify(message));
+  
+      postToIRKit(message).then(() => {
+        sendResponse();
+      }).catch((err) => {
+        console.error(err);
+        sendResponse(err.message);
+      });
     } else {
-      const channelMessages = Object.keys(messages).map(function(key) {
+      let channelMessages = Object.keys(messages).map(function(key) {
         return messages[key];
       });
-      message = channelMessages[Math.floor(Math.random() * channelMessages.length)];
+      const channelLoop = () => {
+        if (channelMessages.length === 0) {
+          sendResponse();
+          return;
+        }
+        const message = channelMessages.pop();
+  
+        console.log('IRKIT Message: ' + JSON.stringify(message));
+  
+        postToIRKit(message).then(() => {
+          setTimeout(channelLoop, 6000);
+        }).catch((err) => {
+          console.error(err);
+          sendResponse(err.message);
+        });
+      };
+      channelLoop();
     }
-  
-    console.log('IRKIT Message: ' + JSON.stringify(message));
-  
-    postToIRKit(message).then(() => {
-      sendResponse("了解しました。");
-    }).catch((err) => {
-      console.error(err);
-      sendResponse(err.message);
-    });
   }
   
   switch (action) {
@@ -91,6 +111,6 @@ exports.processHandler = functions.https.onRequest((request, response) => {
       switchChannel(action, channel);
       break;
     default:
-      sendResponse("認識できませんでした。");
+      sendResponse();
   }
 });

@@ -15,7 +15,7 @@ const postToIRKit = (message) => {
       return axios.post('https://api.getirkit.com/1/messages', {
         clientkey: clinetKey,
         deviceid: deviceid,
-        message: JSON.stringify(m)
+        message: JSON.stringify({ message: m })
       });
     });
   }
